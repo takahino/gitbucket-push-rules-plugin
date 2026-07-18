@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<changeSet>
+    <!--================================================================================================-->
+    <!-- BRANCH_PUSH_RULE -->
+    <!--================================================================================================-->
+    <createTable tableName="BRANCH_PUSH_RULE">
+        <column name="RULE_ID" type="int" nullable="false" autoIncrement="true" unique="true" primaryKeyName="IDX_BRANCH_PUSH_RULE_PK" primaryKey="true"/>
+        <column name="USER_NAME" type="varchar(100)" nullable="false"/>
+        <column name="REPOSITORY_NAME" type="varchar(100)" nullable="false"/>
+        <column name="BRANCH_PATTERN" type="varchar(255)" nullable="false"/>
+        <column name="ENABLED" type="boolean" nullable="false"/>
+        <column name="REGISTERED_DATE" type="datetime" nullable="false"/>
+    </createTable>
+
+    <!--================================================================================================-->
+    <!-- BRANCH_PUSH_RULE_ALLOWED_USER -->
+    <!--================================================================================================-->
+    <createTable tableName="BRANCH_PUSH_RULE_ALLOWED_USER">
+        <column name="RULE_ID" type="int" nullable="false"/>
+        <column name="ALLOWED_USER_NAME" type="varchar(100)" nullable="false"/>
+    </createTable>
+
+    <addPrimaryKey constraintName="IDX_BRANCH_PUSH_RULE_ALLOWED_USER_PK" tableName="BRANCH_PUSH_RULE_ALLOWED_USER" columnNames="RULE_ID, ALLOWED_USER_NAME"/>
+    <addForeignKeyConstraint constraintName="IDX_BRANCH_PUSH_RULE_ALLOWED_USER_FK0" baseTableName="BRANCH_PUSH_RULE_ALLOWED_USER" baseColumnNames="RULE_ID" referencedTableName="BRANCH_PUSH_RULE" referencedColumnNames="RULE_ID"/>
+
+    <!--================================================================================================-->
+    <!-- LINE_ENDING_RULE -->
+    <!--================================================================================================-->
+    <createTable tableName="LINE_ENDING_RULE">
+        <column name="RULE_ID" type="int" nullable="false" autoIncrement="true" unique="true" primaryKeyName="IDX_LINE_ENDING_RULE_PK" primaryKey="true"/>
+        <column name="USER_NAME" type="varchar(100)" nullable="false"/>
+        <column name="REPOSITORY_NAME" type="varchar(100)" nullable="false"/>
+        <column name="DIR_PREFIX" type="varchar(255)" nullable="false"/>
+        <column name="EXTENSIONS" type="varchar(255)" nullable="false"/>
+        <column name="EXPECTED_EOL" type="varchar(10)" nullable="false"/>
+        <column name="ENABLED" type="boolean" nullable="false"/>
+        <column name="REGISTERED_DATE" type="datetime" nullable="false"/>
+    </createTable>
+
+</changeSet>
