@@ -7,6 +7,7 @@ trait BranchPushRuleComponent { self: gitbucket.core.model.Profile =>
 
   lazy val BranchPushRules = TableQuery[BranchPushRules]
   lazy val BranchPushRuleAllowedUsers = TableQuery[BranchPushRuleAllowedUsers]
+  lazy val BranchPushRuleMergeUsers = TableQuery[BranchPushRuleMergeUsers]
 
   class BranchPushRules(tag: Tag) extends Table[BranchPushRule](tag, "BRANCH_PUSH_RULE") {
     val ruleId = column[Int]("RULE_ID", O.AutoInc)
@@ -24,6 +25,12 @@ trait BranchPushRuleComponent { self: gitbucket.core.model.Profile =>
     val allowedUserName = column[String]("ALLOWED_USER_NAME")
     def * = (ruleId, allowedUserName).mapTo[BranchPushRuleAllowedUser]
   }
+
+  class BranchPushRuleMergeUsers(tag: Tag) extends Table[BranchPushRuleMergeUser](tag, "BRANCH_PUSH_RULE_MERGE_USER") {
+    val ruleId = column[Int]("RULE_ID")
+    val mergeUserName = column[String]("MERGE_USER_NAME")
+    def * = (ruleId, mergeUserName).mapTo[BranchPushRuleMergeUser]
+  }
 }
 
 case class BranchPushRule(
@@ -38,4 +45,16 @@ case class BranchPushRule(
 case class BranchPushRuleAllowedUser(
   ruleId: Int,
   allowedUserName: String
+)
+
+case class BranchPushRuleMergeUser(
+  ruleId: Int,
+  mergeUserName: String
+)
+
+/** ルールと許可ユーザー(直接push可 / PRマージ可)のセット */
+case class BranchPushRuleWithUsers(
+  rule: BranchPushRule,
+  allowedUsers: List[String],
+  mergeUsers: List[String]
 )

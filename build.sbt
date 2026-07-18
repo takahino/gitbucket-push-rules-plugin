@@ -1,6 +1,6 @@
 name := "gitbucket-push-rules-plugin"
 organization := "io.github.takahino"
-version := "1.0.0"
+version := "1.0.1"
 scalaVersion := "2.13.18"
 gitbucketVersion := "4.46.1"
 

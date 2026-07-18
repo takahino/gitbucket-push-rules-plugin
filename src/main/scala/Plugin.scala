@@ -16,7 +16,8 @@ class Plugin extends gitbucket.core.plugin.Plugin {
     "Provides configurable push rules per repository (branch push restriction and line ending check)."
 
   override val versions = List(
-    new Version("1.0.0", new LiquibaseMigration("update/gitbucket-push-rules_1.0.0.xml"))
+    new Version("1.0.0", new LiquibaseMigration("update/gitbucket-push-rules_1.0.0.xml")),
+    new Version("1.0.1", new LiquibaseMigration("update/gitbucket-push-rules_1.0.1.xml"))
   )
 
   override val controllers = Seq(

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<changeSet>
+    <!--================================================================================================-->
+    <!-- BRANCH_PUSH_RULE_MERGE_USER -->
+    <!--================================================================================================-->
+    <createTable tableName="BRANCH_PUSH_RULE_MERGE_USER">
+        <column name="RULE_ID" type="int" nullable="false"/>
+        <column name="MERGE_USER_NAME" type="varchar(100)" nullable="false"/>
+    </createTable>
+
+    <addPrimaryKey constraintName="IDX_BRANCH_PUSH_RULE_MERGE_USER_PK" tableName="BRANCH_PUSH_RULE_MERGE_USER" columnNames="RULE_ID, MERGE_USER_NAME"/>
+    <addForeignKeyConstraint constraintName="IDX_BRANCH_PUSH_RULE_MERGE_USER_FK0" baseTableName="BRANCH_PUSH_RULE_MERGE_USER" baseColumnNames="RULE_ID" referencedTableName="BRANCH_PUSH_RULE" referencedColumnNames="RULE_ID"/>
+</changeSet>

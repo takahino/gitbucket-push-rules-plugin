@@ -26,20 +26,17 @@ class PushRulesController
 
   post("/:owner/:repository/settings/push-rules/branch/new")(ownerOnly { repository =>
     val pattern = params.get("branchPattern").map(_.trim).getOrElse("")
-    val users = params
-      .get("allowedUsers")
-      .map(_.split(",").map(_.trim).filter(_.nonEmpty).toSeq)
-      .getOrElse(Nil)
-    val unknownUsers = users.filter(getAccountByUserName(_).isEmpty)
+    val allowedUsers = parseUserList("allowedUsers")
+    val mergeUsers = parseUserList("mergeUsers")
+    val unknownUsers = (allowedUsers ++ mergeUsers).distinct.filter(getAccountByUserName(_).isEmpty)
 
     if (pattern.isEmpty) {
       flash.update("error", "Branch pattern is required.")
-    } else if (users.isEmpty) {
-      flash.update("error", "At least one allowed user is required.")
     } else if (unknownUsers.nonEmpty) {
       flash.update("error", s"Unknown user(s): ${unknownUsers.mkString(", ")}")
     } else {
-      addBranchPushRule(repository.owner, repository.name, pattern, users)
+      // どちらも空のルールは「管理者のみ直接push/マージ可能」を意味するので許容する
+      addBranchPushRule(repository.owner, repository.name, pattern, allowedUsers, mergeUsers)
       flash.update("info", "Branch push rule has been added.")
     }
     redirect(s"/${repository.owner}/${repository.name}/settings/push-rules")
@@ -79,4 +76,10 @@ class PushRulesController
     }
     redirect(s"/${repository.owner}/${repository.name}/settings/push-rules")
   })
+
+  private def parseUserList(paramName: String): Seq[String] =
+    params
+      .get(paramName)
+      .map(_.split(",").map(_.trim).filter(_.nonEmpty).toSeq)
+      .getOrElse(Nil)
 }

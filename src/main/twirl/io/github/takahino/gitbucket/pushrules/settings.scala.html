@@ -1,4 +1,4 @@
-@(branchRules: Seq[(io.github.takahino.gitbucket.pushrules.model.BranchPushRule, Seq[String])],
+@(branchRules: Seq[io.github.takahino.gitbucket.pushrules.model.BranchPushRuleWithUsers],
   eolRules: Seq[io.github.takahino.gitbucket.pushrules.model.LineEndingRule],
   repository: gitbucket.core.service.RepositoryService.RepositoryInfo,
   info: Option[Any],
@@ -14,8 +14,9 @@
         <div class="panel-heading strong">Branch push restriction</div>
         <div class="panel-body">
           <p class="muted">
-            Only listed users can push to branches matching the pattern
-            (glob: <code>main</code>, <code>release/*</code>, <code>**</code>).
+            For branches matching the pattern (glob: <code>main</code>, <code>release/*</code>, <code>**</code>),
+            only <strong>push users</strong> can push directly and only <strong>merge users</strong> can merge
+            pull requests from the Web UI. An empty list means administrators only.
             Repository owners, group managers and administrators always bypass these rules.
           </p>
           @if(branchRules.nonEmpty){
@@ -23,19 +24,21 @@
               <thead>
                 <tr>
                   <th>Branch pattern</th>
-                  <th>Allowed users</th>
+                  <th>Push users</th>
+                  <th>Merge users (PR)</th>
                   <th>Registered</th>
                   <th style="width: 80px;"></th>
                 </tr>
               </thead>
               <tbody>
-                @branchRules.map { case (rule, users) =>
+                @branchRules.map { ruleWithUsers =>
                   <tr>
-                    <td><code>@rule.branchPattern</code></td>
-                    <td>@users.mkString(", ")</td>
-                    <td>@helpers.datetime(rule.registeredDate)</td>
+                    <td><code>@ruleWithUsers.rule.branchPattern</code></td>
+                    <td>@if(ruleWithUsers.allowedUsers.isEmpty){<span class="muted">(administrators only)</span>}else{@ruleWithUsers.allowedUsers.mkString(", ")}</td>
+                    <td>@if(ruleWithUsers.mergeUsers.isEmpty){<span class="muted">(administrators only)</span>}else{@ruleWithUsers.mergeUsers.mkString(", ")}</td>
+                    <td>@helpers.datetime(ruleWithUsers.rule.registeredDate)</td>
                     <td>
-                      <form method="post" action="@helpers.url(repository)/settings/push-rules/branch/@rule.ruleId/delete" style="margin: 0;">
+                      <form method="post" action="@helpers.url(repository)/settings/push-rules/branch/@ruleWithUsers.rule.ruleId/delete" style="margin: 0;">
                         <input type="submit" class="btn btn-danger btn-sm" value="Delete"/>
                       </form>
                     </td>
@@ -46,8 +49,9 @@
           }
           <form method="post" action="@helpers.url(repository)/settings/push-rules/branch/new" class="form-inline">
             <fieldset class="form-group">
-              <input type="text" name="branchPattern" class="form-control" placeholder="Branch pattern (e.g. main, release/*)" style="width: 250px;"/>
-              <input type="text" name="allowedUsers" class="form-control" placeholder="Allowed users (comma separated)" style="width: 300px;"/>
+              <input type="text" name="branchPattern" class="form-control" placeholder="Branch pattern (e.g. main, release/*)" style="width: 220px;"/>
+              <input type="text" name="allowedUsers" class="form-control" placeholder="Push users (comma separated)" style="width: 250px;"/>
+              <input type="text" name="mergeUsers" class="form-control" placeholder="Merge users (comma separated)" style="width: 250px;"/>
               <input type="submit" class="btn btn-success" value="Add rule"/>
             </fieldset>
           </form>

@@ -11,10 +11,10 @@ import profile.api._
 
 /**
  * ブランチpush制限フック。
- * ルールにマッチしたブランチへは、許可ユーザーまたは管理者(オーナー/システム管理者/
- * グループマネージャー/ADMINロールのコラボレータ)のみpushできる。
- * Web UIからのPRマージ(mergePullRequest=true)にも適用する。適用しないと
- * Writeコラボレータが「PRを作ってUIでマージ」で制限を迂回できてしまうため。
+ * ルールにマッチしたブランチへの直接pushは「許可ユーザー」のみ、
+ * Web UIからのPRマージ(mergePullRequest=true)は「マージ許可ユーザー」のみに制限する。
+ * 管理者(オーナー/システム管理者/グループマネージャー/ADMINロールのコラボレータ)は
+ * どちらも常にバイパスする。
  */
 class BranchPushRuleHook extends ReceiveHook with PushRuleService with AccountService with RepositoryService {
 
@@ -32,15 +32,21 @@ class BranchPushRuleHook extends ReceiveHook with PushRuleService with AccountSe
       None
     } else {
       val matched = getEnabledBranchPushRules(owner, repository)
-        .filter { case (rule, _) => GlobMatcher.matches(rule.branchPattern, branch) }
+        .filter(r => GlobMatcher.matches(r.rule.branchPattern, branch))
       if (matched.isEmpty) {
         None
-      } else if (matched.exists { case (_, allowedUsers) => allowedUsers.contains(pusher) }) {
-        None
-      } else if (isBypassAllowed(owner, repository, pusher)) {
-        None
+      } else if (mergePullRequest) {
+        if (matched.exists(_.mergeUsers.contains(pusher)) || isBypassAllowed(owner, repository, pusher)) {
+          None
+        } else {
+          Some(s"Merging into branch '$branch' is restricted by push rules. Contact the repository owner.")
+        }
       } else {
-        Some(s"Push to branch '$branch' is restricted by push rules. Contact the repository owner.")
+        if (matched.exists(_.allowedUsers.contains(pusher)) || isBypassAllowed(owner, repository, pusher)) {
+          None
+        } else {
+          Some(s"Push to branch '$branch' is restricted by push rules. Contact the repository owner.")
+        }
       }
     }
   }

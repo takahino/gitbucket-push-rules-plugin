@@ -9,26 +9,40 @@ trait PushRuleService {
 
   def getBranchPushRules(owner: String, repository: String)(implicit
     s: Session
-  ): List[(BranchPushRule, List[String])] = {
+  ): List[BranchPushRuleWithUsers] = {
     val rules = BranchPushRules
       .filter(t => t.userName === owner.bind && t.repositoryName === repository.bind)
       .sortBy(_.ruleId)
       .list
-    val users = BranchPushRuleAllowedUsers
+    val allowedUsers = BranchPushRuleAllowedUsers
       .filter(_.ruleId inSetBind rules.map(_.ruleId))
       .list
       .groupBy(_.ruleId)
-    rules.map(rule => rule -> users.getOrElse(rule.ruleId, Nil).map(_.allowedUserName))
+    val mergeUsers = BranchPushRuleMergeUsers
+      .filter(_.ruleId inSetBind rules.map(_.ruleId))
+      .list
+      .groupBy(_.ruleId)
+    rules.map { rule =>
+      BranchPushRuleWithUsers(
+        rule,
+        allowedUsers.getOrElse(rule.ruleId, Nil).map(_.allowedUserName),
+        mergeUsers.getOrElse(rule.ruleId, Nil).map(_.mergeUserName)
+      )
+    }
   }
 
   def getEnabledBranchPushRules(owner: String, repository: String)(implicit
     s: Session
-  ): List[(BranchPushRule, List[String])] =
-    getBranchPushRules(owner, repository).filter(_._1.enabled)
+  ): List[BranchPushRuleWithUsers] =
+    getBranchPushRules(owner, repository).filter(_.rule.enabled)
 
-  def addBranchPushRule(owner: String, repository: String, branchPattern: String, allowedUsers: Seq[String])(implicit
-    s: Session
-  ): Unit = {
+  def addBranchPushRule(
+    owner: String,
+    repository: String,
+    branchPattern: String,
+    allowedUsers: Seq[String],
+    mergeUsers: Seq[String]
+  )(implicit s: Session): Unit = {
     val ruleId = (BranchPushRules returning BranchPushRules.map(_.ruleId)) insert BranchPushRule(
       userName = owner,
       repositoryName = repository,
@@ -39,6 +53,9 @@ trait PushRuleService {
     allowedUsers.distinct.foreach { user =>
       BranchPushRuleAllowedUsers insert BranchPushRuleAllowedUser(ruleId, user)
     }
+    mergeUsers.distinct.foreach { user =>
+      BranchPushRuleMergeUsers insert BranchPushRuleMergeUser(ruleId, user)
+    }
   }
 
   def deleteBranchPushRule(owner: String, repository: String, ruleId: Int)(implicit s: Session): Unit = {
@@ -48,6 +65,7 @@ trait PushRuleService {
       .firstOption
       .foreach { _ =>
         BranchPushRuleAllowedUsers.filter(_.ruleId === ruleId.bind).delete
+        BranchPushRuleMergeUsers.filter(_.ruleId === ruleId.bind).delete
         BranchPushRules.filter(_.ruleId === ruleId.bind).delete
       }
   }
@@ -89,6 +107,7 @@ trait PushRuleService {
       .map(_.ruleId)
       .list
     BranchPushRuleAllowedUsers.filter(_.ruleId inSetBind ruleIds).delete
+    BranchPushRuleMergeUsers.filter(_.ruleId inSetBind ruleIds).delete
     BranchPushRules.filter(t => t.userName === owner.bind && t.repositoryName === repository.bind).delete
     LineEndingRules.filter(t => t.userName === owner.bind && t.repositoryName === repository.bind).delete
   }
