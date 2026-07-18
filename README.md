@@ -1,5 +1,7 @@
 # gitbucket-push-rules-plugin
 
+English | [日本語](README.ja.md)
+
 A [GitBucket](https://github.com/gitbucket/gitbucket) plugin that provides configurable push rules per repository.
 
 ## Features
