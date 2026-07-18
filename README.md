@@ -6,16 +6,25 @@ A [GitBucket](https://github.com/gitbucket/gitbucket) plugin that provides confi
 
 ### Branch push restriction
 
-Allow only specific users to push to specific branches. Branch names are matched by glob patterns:
+Restrict who can update specific branches. Branch names are matched by glob patterns:
 
 - `main` — exact match
 - `release/*` — matches `release/1.0` but not `release/1.0/hotfix`
 - `**` — matches all branches
 
+Each rule has two independent user lists:
+
+- **Push users** — users who can push directly to the branch.
+- **Merge users** — users who can merge pull requests into the branch from the Web UI.
+
 Notes:
 
-- Repository owners, group managers, system administrators and `ADMIN`-role collaborators always **bypass** these rules (same policy as GitBucket's built-in Protected Branch).
-- Rules are also enforced when a pull request is merged from the Web UI, so the restriction cannot be bypassed by opening a PR and merging it. (The merge fails with an error in that case.)
+- An empty list means "administrators only". For example, leaving push users empty and setting
+  merge users to your release managers enforces a PR-only workflow.
+- Repository owners, group managers, system administrators and `ADMIN`-role collaborators always
+  **bypass** these rules (same policy as GitBucket's built-in Protected Branch).
+- A rejected Web UI merge currently surfaces as an error page (GitBucket propagates hook errors
+  of the merge path as an exception).
 - Tag pushes are not affected.
 
 ### Line ending check
@@ -41,6 +50,12 @@ and add rules. A rejected push looks like this:
 ```
  ! [remote rejected] main -> main (Push to branch 'main' is restricted by push rules. Contact the repository owner.)
  ! [remote rejected] main -> main (Line ending violation: 'src/A.java' (commit e3286dc) must use LF. (rule: dir='src', extensions='java'))
+```
+
+A pull request merge by a user who is not a merge user fails with:
+
+```
+Merging into branch 'main' is restricted by push rules. Contact the repository owner.
 ```
 
 ## Compatibility
