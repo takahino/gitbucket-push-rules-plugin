@@ -1,0 +1,107 @@
+@(branchRules: Seq[(io.github.takahino.gitbucket.pushrules.model.BranchPushRule, Seq[String])],
+  eolRules: Seq[io.github.takahino.gitbucket.pushrules.model.LineEndingRule],
+  repository: gitbucket.core.service.RepositoryService.RepositoryInfo,
+  info: Option[Any],
+  error: Option[Any])(implicit context: gitbucket.core.controller.Context)
+@import gitbucket.core.view.helpers
+@gitbucket.core.html.main("Settings", Some(repository)){
+  @gitbucket.core.html.menu("settings", repository){
+    @gitbucket.core.settings.html.menu("push-rules", repository){
+      @gitbucket.core.helper.html.information(info)
+      @gitbucket.core.helper.html.error(error)
+
+      <div class="panel panel-default">
+        <div class="panel-heading strong">Branch push restriction</div>
+        <div class="panel-body">
+          <p class="muted">
+            Only listed users can push to branches matching the pattern
+            (glob: <code>main</code>, <code>release/*</code>, <code>**</code>).
+            Repository owners, group managers and administrators always bypass these rules.
+          </p>
+          @if(branchRules.nonEmpty){
+            <table class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>Branch pattern</th>
+                  <th>Allowed users</th>
+                  <th>Registered</th>
+                  <th style="width: 80px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @branchRules.map { case (rule, users) =>
+                  <tr>
+                    <td><code>@rule.branchPattern</code></td>
+                    <td>@users.mkString(", ")</td>
+                    <td>@helpers.datetime(rule.registeredDate)</td>
+                    <td>
+                      <form method="post" action="@helpers.url(repository)/settings/push-rules/branch/@rule.ruleId/delete" style="margin: 0;">
+                        <input type="submit" class="btn btn-danger btn-sm" value="Delete"/>
+                      </form>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          <form method="post" action="@helpers.url(repository)/settings/push-rules/branch/new" class="form-inline">
+            <fieldset class="form-group">
+              <input type="text" name="branchPattern" class="form-control" placeholder="Branch pattern (e.g. main, release/*)" style="width: 250px;"/>
+              <input type="text" name="allowedUsers" class="form-control" placeholder="Allowed users (comma separated)" style="width: 300px;"/>
+              <input type="submit" class="btn btn-success" value="Add rule"/>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading strong">Line ending check</div>
+        <div class="panel-body">
+          <p class="muted">
+            Reject pushes that introduce unexpected line endings to files with the specified
+            extensions under the specified directory. These rules apply to all users, including administrators.
+          </p>
+          @if(eolRules.nonEmpty){
+            <table class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>Directory</th>
+                  <th>Extensions</th>
+                  <th>Expected EOL</th>
+                  <th>Registered</th>
+                  <th style="width: 80px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @eolRules.map { rule =>
+                  <tr>
+                    <td>@if(rule.dirPrefix.isEmpty){<span class="muted">(repository root)</span>}else{<code>@rule.dirPrefix</code>}</td>
+                    <td><code>@rule.extensions</code></td>
+                    <td>@rule.expectedEol</td>
+                    <td>@helpers.datetime(rule.registeredDate)</td>
+                    <td>
+                      <form method="post" action="@helpers.url(repository)/settings/push-rules/eol/@rule.ruleId/delete" style="margin: 0;">
+                        <input type="submit" class="btn btn-danger btn-sm" value="Delete"/>
+                      </form>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          <form method="post" action="@helpers.url(repository)/settings/push-rules/eol/new" class="form-inline">
+            <fieldset class="form-group">
+              <input type="text" name="dirPrefix" class="form-control" placeholder="Directory (empty = whole repository)" style="width: 250px;"/>
+              <input type="text" name="extensions" class="form-control" placeholder="Extensions (e.g. java,xml)" style="width: 200px;"/>
+              <select name="expectedEol" class="form-control">
+                <option value="LF">LF</option>
+                <option value="CRLF">CRLF</option>
+              </select>
+              <input type="submit" class="btn btn-success" value="Add rule"/>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+    }
+  }
+}
